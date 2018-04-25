@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title> Flappy Bird </title>
+
+    <style>
+        canvas {
+            border: 1px solid #d3d3d3;
+            background-color: rgb(200, 250, 255);
+        }
+    </style>
+
+</head>
+
+<body onload="startGame()">
+
+<script>
+
+var myGamePiece;
+
+var myObstacles = [];
+
+var score = 0;
+
+function startGame() {
+    myGameArea.start();
+    myGamePiece = new component(30, 30, "rgb(230, 230, 65)", 100, 120);
+}
+
+var myGameArea = {
+    canvas : document.createElement("canvas"),
+
+    start : function() {
+        this.canvas.width = 480;
+        this.canvas.height = 270;
+        this.context = this.canvas.getContext("2d");
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+
+        this.interval = setInterval(updateGameArea, 20);
+
+        window.addEventListener('keydown', function (e) {
+            myGameArea.key = e.keyCode;
+        })
+        window.addEventListener('keyup', function (e) {
+            myGameArea.key = false;
+        })
+
+        this.frameNo = 0;
+
+    },
+
+    clear : function() {
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    },
+
+    stop : function() {
+        endGameMessage();
+        clearInterval(this.interval);
+    }
+}
+
+function component(width, height, color, x, y) {
+    this.width = width;
+    this.height = height;
+    this.x = x;
+    this.y = y;
+
+    this.speedY = 2;
+
+    this.jumpTimeRemaining = 0;
+
+    this.update = function() {
+        context = myGameArea.context;
+        context.fillStyle = color;
+        context.fillRect(this.x, this.y, this.width, this.height);
+    }
+
+    this.newPosition = function() {
+        myGamePiece.y += myGamePiece.speedY;
+    }
+
+    this.jump = function() {
+        this.jumpTimeRemaining = 12;
+        this.speedY = -3;
+    }
+
+    this.crashWith = function(otherObj) {
+        var myLeft = this.x;
+        var myRight = this.x + (this.width);
+        var myTop = this.y;
+        var myBottom = this.y + (this.height);
+
+        var otherLeft = otherObj.x;
+        var otherRight = otherObj.x + (otherObj.width);
+        var otherTop = otherObj.y;
+        var otherBottom = otherObj.y + (otherObj.height);
+
+        if((myBottom < otherTop) ||
+            (myTop > otherBottom) ||
+            (myRight < otherLeft) ||
+            (myLeft > otherRight)) 
+             return false;
+
+         return true;
+    }
+}
+
+function updateGameArea() {
+    myGameArea.clear();
+
+    myGameArea.frameNo += 1;
+
+    createWalls();
+    moveWalls();
+
+    // key 32 mean space bar
+    if(myGameArea.key == 32 && myGamePiece.y > 0)
+        myGamePiece.jump();
+
+    if(myGamePiece.jumpTimeRemaining == 0) {
+        myGamePiece.speedY = 2;
+    }
+    else{
+        myGamePiece.jumpTimeRemaining -= 1;
+    }
+
+    myGamePiece.newPosition();
+    myGamePiece.update();
+
+    if(crashed())
+        myGameArea.stop();
+
+    if(myGameArea.frameNo > 200 && (myGameArea.frameNo - 50) % 150 == 0)
+        score++;
+
+    displayScore();
+}
+
+function displayScore() {
+    myGameArea.context.font = "20px" + " " + "Consolas";
+    myGameArea.context.fillStyle = "black";
+    myGameArea.context.fillText("Score: " + score, 350, 40);
+}
+
+function createWalls() {
+    if(myGameArea.frameNo%150 == 0){
+        wallColor = "rgb(55, 180, 50)";
+        x = myGameArea.canvas.width;
+        minHeight = 20;
+        maxHeight = 170;
+        height = Math.floor(Math.random()*(maxHeight - minHeight + 1) + minHeight);
+        width = 50;
+        gap = 100;
+        myObstacles.push(new component(width, height, wallColor, x, 0));
+        myObstacles.push(new component(width, x-height-gap, wallColor, x, height + gap));
+    }
+}
+
+function moveWalls() {
+    for(i=0; i<myObstacles.length; i += 1) {
+        myObstacles[i].x += -2;
+        myObstacles[i].update();
+    }
+}
+
+function endGameMessage() {
+    myGameArea.context.font = "40px" + " " + "Consolas";
+    myGameArea.context.fillStyle = "black";
+    myGameArea.context.fillText("Game Over", 130, 140);
+}
+
+function crashed() {
+
+    for(i = 0; i < myObstacles.length; i += 1) {
+        if(myGamePiece.crashWith(myObstacles[i])) {
+            return true;
+        }
+    }
+
+    if(myGamePiece.y + myGamePiece.height > myGameArea.canvas.height)
+        return true;
+
+    return false;
+}
+
+
+
+
+
+function randomColor() {
+    var r = Math.floor(Math.random()*256);
+    var g = Math.floor(Math.random()*256);
+    var b = Math.floor(Math.random()*256);
+
+    return "rgb("+r+","+g+","+b+")";
+}
+
+</script>
+
+</body>
+
+</html>
+
+
